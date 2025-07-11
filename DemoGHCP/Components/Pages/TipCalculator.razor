@@ -1,0 +1,185 @@
+@page "/tip-calculator"
+@rendermode InteractiveServer
+
+<PageTitle>Tip Calculator</PageTitle>
+
+<h1>Tip Calculator</h1>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Calculate Your Tip</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="billAmount" class="form-label">Bill Amount ($)</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="billAmount" 
+                               @bind="billAmount" 
+                               @bind:event="oninput"
+                               @onchange="CalculateTip"
+                               step="0.01" 
+                               min="0" 
+                               placeholder="Enter bill amount" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tipPercentage" class="form-label">Tip Percentage (%)</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="tipPercentage" 
+                               @bind="tipPercentage" 
+                               @bind:event="oninput"
+                               @onchange="CalculateTip"
+                               step="0.1" 
+                               min="0" 
+                               max="100" 
+                               placeholder="Enter tip percentage" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Quick Tip Options</label>
+                        <div class="btn-group d-flex" role="group">
+                            <button type="button" class="btn btn-outline-primary" @onclick="() => SetTipPercentage(15)">15%</button>
+                            <button type="button" class="btn btn-outline-primary" @onclick="() => SetTipPercentage(18)">18%</button>
+                            <button type="button" class="btn btn-outline-primary" @onclick="() => SetTipPercentage(20)">20%</button>
+                            <button type="button" class="btn btn-outline-primary" @onclick="() => SetTipPercentage(25)">25%</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="numberOfPeople" class="form-label">Number of People</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="numberOfPeople" 
+                               @bind="numberOfPeople" 
+                               @bind:event="oninput"
+                               @onchange="CalculateTip"
+                               min="1" 
+                               placeholder="Enter number of people" />
+                    </div>
+
+                    <button class="btn btn-primary w-100" @onclick="CalculateTip">Calculate Tip</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Results</h3>
+                </div>
+                <div class="card-body">
+                    @if (hasCalculated)
+                    {
+                        <div class="alert alert-success">
+                            <h4>Tip Calculation Results</h4>
+                            <hr />
+                            <div class="row">
+                                <div class="col-6"><strong>Bill Amount:</strong></div>
+                                <div class="col-6">$@billAmount.ToString("F2")</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6"><strong>Tip (@tipPercentage%):</strong></div>
+                                <div class="col-6">$@tipAmount.ToString("F2")</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6"><strong>Total Amount:</strong></div>
+                                <div class="col-6"><strong>$@totalAmount.ToString("F2")</strong></div>
+                            </div>
+                            
+                            @if (numberOfPeople > 1)
+                            {
+                                <hr />
+                                <h5>Per Person Split</h5>
+                                <div class="row">
+                                    <div class="col-6"><strong>Bill per person:</strong></div>
+                                    <div class="col-6">$@billPerPerson.ToString("F2")</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6"><strong>Tip per person:</strong></div>
+                                    <div class="col-6">$@tipPerPerson.ToString("F2")</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6"><strong>Total per person:</strong></div>
+                                    <div class="col-6"><strong>$@totalPerPerson.ToString("F2")</strong></div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Enter your bill details to calculate the tip.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private decimal billAmount = 0;
+    private decimal tipPercentage = 18;
+    private int numberOfPeople = 1;
+    private bool hasCalculated = false;
+    
+    // Calculated values
+    private decimal tipAmount = 0;
+    private decimal totalAmount = 0;
+    private decimal billPerPerson = 0;
+    private decimal tipPerPerson = 0;
+    private decimal totalPerPerson = 0;
+
+    private void SetTipPercentage(decimal percentage)
+    {
+        tipPercentage = percentage;
+        CalculateTip();
+    }
+
+    private void CalculateTip()
+    {
+        // Ensure numberOfPeople is at least 1 to prevent division by zero
+        if (numberOfPeople < 1)
+        {
+            numberOfPeople = 1;
+        }
+
+        if (billAmount > 0 && tipPercentage >= 0 && numberOfPeople >= 1)
+        {
+            // Calculate tip and total
+            tipAmount = billAmount * (tipPercentage / 100);
+            totalAmount = billAmount + tipAmount;
+            
+            // Calculate per person amounts with division by zero protection
+            if (numberOfPeople > 0)
+            {
+                billPerPerson = billAmount / numberOfPeople;
+                tipPerPerson = tipAmount / numberOfPeople;
+                totalPerPerson = totalAmount / numberOfPeople;
+            }
+            else
+            {
+                // Fallback values if numberOfPeople is somehow 0
+                billPerPerson = billAmount;
+                tipPerPerson = tipAmount;
+                totalPerPerson = totalAmount;
+            }
+            
+            hasCalculated = true;
+        }
+        else
+        {
+            hasCalculated = false;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        CalculateTip();
+    }
+}
